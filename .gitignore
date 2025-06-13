@@ -1,0 +1,8 @@
+.venv
+.env
+__pycache__/
+*.log
+old_code/
+*.db
+
+.DS_Store
