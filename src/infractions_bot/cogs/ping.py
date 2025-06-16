@@ -18,8 +18,6 @@ class Ping(commands.Cog):
     async def ping(self, interaction: nextcord.Interaction, target_user: nextcord.Member):
 
         logging.info(f"Pinging user from Ping Cog: {target_user.name}")
-        # if interaction.user.id == target_user.id:
-        #     await interaction.response.send_message('You cannot ping yourself', ephemeral=True)
         
         logging.debug(type(target_user.id))
         await interaction.response.send_message(f"using exclam: <@!{target_user.id}>\nusing no exclam: <@{target_user.id}>")

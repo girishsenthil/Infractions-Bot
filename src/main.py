@@ -12,8 +12,11 @@ async def main():
     bot = nb.bot
     try:
         bot.load_extension('infractions_bot.cogs.infractions')
+        bot.load_extension('infractions_bot.cogs.infraction_info')
+
+        #dev cog
         bot.load_extension('infractions_bot.cogs.ping')
-        # bot.load_extension('infractions_bot.cogs.getter')
+        
     except:
         print('cogs not loaded')
 

@@ -134,7 +134,7 @@ def get_user_infractions(guild_id, user_id) -> Dict[str, Any]:
     return [dict(row) for row in user_infractions]
 
 
-def get_guild_leaderboard(guild_id, limit=10) -> List[Dict[str, Any]]:
+def get_guild_leaderboard(guild_id, limit=3) -> List[Dict[str, Any]]:
     print('in database func for guild_leaderboard')
     ggl_script = load_sql('get_guild_leaderboard.sql', 'queries')
 
