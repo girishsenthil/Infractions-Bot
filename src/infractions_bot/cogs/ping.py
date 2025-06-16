@@ -4,7 +4,8 @@ from nextcord.ext import commands
 import logging
 
 TEST_GUILD_ID = 1292283530415444000
-print('test cog loading')
+
+
 class Ping(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

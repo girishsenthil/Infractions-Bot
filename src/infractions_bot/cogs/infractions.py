@@ -10,7 +10,6 @@ import infractions_bot.database_funcs as dbf
 
 TEST_GUILD_ID = 1292283530415444000
 
-print('infractions cog loading')
 
 class Infractions(commands.Cog):
     def __init__(self, bot):

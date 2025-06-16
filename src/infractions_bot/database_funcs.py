@@ -42,7 +42,7 @@ def configure_guild_settings(guild_id, updated_settings: Dict[str, Any]):
 
     update_clause = ', '.join([f"{key} = :{key}" for key in updated_settings])
     ugs_script = ugs_script.format(update_clause=update_clause)
-    print(ugs_script)
+    
     updated_settings['guild_id'] = guild_id
 
     with get_db() as conn:

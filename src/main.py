@@ -13,6 +13,7 @@ async def main():
     try:
         bot.load_extension('infractions_bot.cogs.infractions')
         bot.load_extension('infractions_bot.cogs.infraction_info')
+        bot.load_extension('infractions_bot.cogs.mod_commands')
 
         #dev cog
         bot.load_extension('infractions_bot.cogs.ping')
