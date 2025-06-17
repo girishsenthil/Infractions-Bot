@@ -3,10 +3,17 @@ import nextcord
 from nextcord.ext import commands
 import logging
 
+from infractions_bot.cogs.vote_view import VoteView
+import infractions_bot.database_funcs as dbf
+
 TEST_GUILD_ID = 1292283530415444000
 
 
 class Ping(commands.Cog):
+    '''
+    Dev cog for testing components/features
+    '''
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -28,6 +35,45 @@ class Ping(commands.Cog):
         
         guild = self.bot.get_guild(interaction.guild.id)
         await interaction.response.send_message(f"GUILD ID: {guild.id}; GUILD_NAME: {guild.name}")
+
+    @nextcord.slash_command(name='dummy_embed', description='dummy embed for dev purposes', guild_ids=[TEST_GUILD_ID])
+    async def dummy_embed(self, interaction: nextcord.Interaction):
+
+        embed = nextcord.Embed(
+            title=f"Testing embed in **{interaction.guild.name}**",
+            description="Embed for testing",
+            color=nextcord.Color.purple(),
+        )
+
+        view = VoteView(1, 2)
+        await interaction.response.send_message(embed=embed, view=view)
+        message = await interaction.original_message()
+
+        await asyncio.sleep(15)
+        view.stop()
+        print('view has stopped')
+        await message.edit(content=(f"button clicked {view.count} times\n"
+                                    f"Votes: {''.join([f"<@{i}>\n" for i in view.approved])}"), embed=None, view=None)
+        
+
+    @nextcord.slash_command(name='clear_pending', description='Dev command to clear pending infractions', guild_ids=[TEST_GUILD_ID])
+    @commands.is_owner()
+    async def clear_pending(self, interaction):
+
+        try:
+            dbf.clear_pending_infractions()
+        except Exception as e:
+            logging.error('Error with clearing pending infractions', exc_info=True)
+            await interaction.response.send_message('Error with clearing pending infractions', ephemeral=True)
+        
+        await interaction.response.send_message('Pending infractions cleared', ephemeral=True)
+
+        return
+    
+        
+    
+
+
 
 
 

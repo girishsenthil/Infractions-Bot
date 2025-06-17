@@ -7,10 +7,11 @@ load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 async def main():
-    # ► create the bot first
-    import infractions_bot.new_bot as nb
+    
+    import infractions_bot.bot as nb
     bot = nb.bot
     try:
+
         bot.load_extension('infractions_bot.cogs.infractions')
         bot.load_extension('infractions_bot.cogs.infraction_info')
         bot.load_extension('infractions_bot.cogs.mod_commands')
@@ -18,8 +19,9 @@ async def main():
         #dev cog
         bot.load_extension('infractions_bot.cogs.ping')
         
-    except:
-        print('cogs not loaded')
+    except Exception as e:
+        print('cog not loaded')
+        print(e)
 
     await bot.start(BOT_TOKEN)
 

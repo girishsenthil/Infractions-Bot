@@ -7,6 +7,7 @@ import nextcord
 from nextcord.ext import commands
 
 import infractions_bot.database_funcs as dbf
+from infractions_bot.cogs.vote_view import VoteView
 
 TEST_GUILD_ID = 1292283530415444000
 
@@ -74,13 +75,11 @@ class Infractions(commands.Cog):
                                                               target_user.id, 
                                                               reason, 
                                                               infraction_id)
-
-        logging.debug('Sending message')
-        await interaction.response.send_message(embed=infraction_embed)
-        message = await interaction.original_message()
         
-        await message.add_reaction('✅')
-        await message.add_reaction('❌')
+        view = VoteView(infraction['reporter_id'], infraction['target_user_id'])
+        logging.debug('Sending message')
+        await interaction.response.send_message(embed=infraction_embed, view=view)
+        message = await interaction.original_message()
 
         infraction['message_id'] = message.id
 
@@ -92,7 +91,13 @@ class Infractions(commands.Cog):
             logging.error('Error with saving infraction in database', exc_info=True)
         
         logging.debug('Creating async timer for infraction')
-        asyncio.create_task(self._infraction_timer(infraction))
+
+        voting_duration = (datetime.fromisoformat(infraction['end_time']) - datetime.now()).total_seconds()
+        await asyncio.sleep(voting_duration)
+        
+        view.stop()
+        await self.finalize(infraction, message, view)
+
     
     async def create_infraction_embed(self,
                                 reporter_id: int, 
@@ -107,26 +112,10 @@ class Infractions(commands.Cog):
     )
         
         embed.add_field(name="Voting", value="React with ✅ to approve or ❌ to reject", inline=False)
-        # embed.add_field(name="Votes", value="✅ 0 | ❌ 0", inline=True)
         embed.add_field(name="Status", value="🕐 Voting in progress...", inline=False)
         embed.set_footer(text=f"Infraction ID: {infraction_id}")
 
         return embed
-    
-    async def _infraction_timer(self, infraction: Dict[str, Any]):
-
-        try:
-            voting_duration = (datetime.fromisoformat(infraction['end_time']) - datetime.now()).total_seconds()
-            logging.debug(f"Async timer created for {voting_duration}")
-        except:
-            logging.debug('voting_duration calc error', exc_info=True)
-
-        await asyncio.sleep(voting_duration) 
-
-        # await asyncio.sleep(5)
-
-        logging.debug('Async timer complete, going into finalize func')
-        await self.finalize(infraction)
     
     async def get_message(self, channel_id: int, message_id: int):
         logging.debug("Getting message")
@@ -143,42 +132,30 @@ class Infractions(commands.Cog):
 
         return message
 
-    async def finalize(self, infraction: Dict[str, Any]):
+    async def finalize(self, infraction: Dict[str, Any], message: nextcord.Message, view: VoteView):
 
         try:
-
-            logging.debug('Grabbing message')
-            channel_id, message_id = infraction['channel_id'], infraction['message_id']
-
-            try:
-
-                channel = self.bot.get_channel(channel_id)
-                infraction_message = await channel.fetch_message(message_id)
-
-            except Exception as e:
-                logging.error('Error with loading original infraction message', exc_info=True)
-            
             guild_settings = dbf.get_guild_settings(infraction['guild_id'])
-
-            logging.debug('counting reactions')
-            for reaction in infraction_message.reactions:
-                if str(reaction.emoji) == self.emojis['approve']:
-                    approve_votes = reaction.count - 1
-                elif str(reaction.emoji) == self.emojis['reject']:
-                    reject_votes = reaction.count - 1
-            
-            logging.debug('Creating final embed')
-            embed, outcome = self.create_finalization_embed(infraction, guild_settings, approve_votes, reject_votes)
-
-            await infraction_message.edit(embed=embed)
-            await infraction_message.clear_reactions()
-
-            logging.debug('Finalizing infraction and saving in db')
-            dbf.finalize_infraction(infraction['id'], outcome, approve_votes, reject_votes)
-
         except Exception as e:
-            logging.error('Error with finalizing infraction', exc_info=True)
+            logging.error(f"Error with grabbing guild settings for guild: {infraction['guild_id']}", exc_info=True)
+            await message.edit(content='ERROR FINALIZING INFRACTION', embed=None, view=None)
             return
+        
+        approved_count, rejected_count = view.approved_count, view.rejected_count
+        embed, outcome = self.create_finalization_embed(infraction, 
+                                                        guild_settings, 
+                                                        approved_count, 
+                                                        rejected_count)
+        
+        await message.edit(embed=embed, view=None)
+
+        try:
+            dbf.finalize_infraction(infraction['id'], outcome, approved_count, rejected_count)
+        except Exception as e:
+            logging.error(f"Error with finalizing infraction: {infraction[id]}", exc_info=True)
+        
+        return
+        
 
     def create_finalization_embed(self, infraction, guild_settings, approve_votes, reject_votes) -> nextcord.Embed:
         
@@ -237,6 +214,3 @@ class Infractions(commands.Cog):
 
 def setup(bot):
     bot.add_cog(Infractions(bot))
-
-# async def setup(bot):
-#     await bot.add_cog(Infractions(bot))

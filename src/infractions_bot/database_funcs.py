@@ -177,5 +177,16 @@ def get_all_pending_infractions() -> List[Dict[str, Any]]:
     return [dict(pending_infraction) for pending_infraction in all_pending_infractions]
 
 
+def clear_pending_infractions() -> None:
+
+    cpi_script = load_sql('clear_pending_infractions.sql', 'deletes')
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute(cpi_script)
+    
+    return
+
+
 
 

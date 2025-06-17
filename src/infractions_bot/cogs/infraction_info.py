@@ -2,9 +2,11 @@ import asyncio
 import nextcord
 from nextcord.ext import commands
 import logging
-import infractions_bot.database_funcs as dbf
-from typing import Dict
+
+from typing import Dict, List
 from datetime import datetime
+
+import infractions_bot.database_funcs as dbf
 
 TEST_GUILD_ID = 1292283530415444000
 
@@ -53,7 +55,7 @@ class InfractionInfo(commands.Cog):
         await interaction.response.send_message(embed=embed)
 
 
-    @nextcord.slash_command(name='infractionsleaderboard',
+    @nextcord.slash_command(name='leaderboard',
                             description='Top 3 users with the most approved infractions in the server',
                             guild_ids=[TEST_GUILD_ID])
     async def infractions_leaderboard(self, interaction: nextcord.Interaction):
@@ -61,7 +63,7 @@ class InfractionInfo(commands.Cog):
 
         
         try:
-            top_n_users: Dict = dbf.get_guild_leaderboard(interaction.guild.id)
+            top_n_users: List[Dict] = dbf.get_guild_leaderboard(interaction.guild.id)
         except Exception as e:
             logging.error('Error with getting guild infractions', exc_info=True)
         
@@ -73,11 +75,10 @@ class InfractionInfo(commands.Cog):
 
         embed = nextcord.Embed(
         title=f"🏆 Infraction Leaderboard - {interaction.guild.name}",
-        description="Top 3 users with the most approved infractions in this server",
+        description="Users with the most approved infractions in this server",
         color=nextcord.Color.gold()
     )
 
-        # top_n_users = [dict((user_id, val), (username, val), (infraction_count, val))]
         
         for idx, user_dict in enumerate(top_n_users, 1):
             medal = "🥇" if idx == 1 else "🥈" if idx == 2 else "🥉"
@@ -90,7 +91,7 @@ class InfractionInfo(commands.Cog):
         
         await interaction.response.send_message(embed=embed)
     
-    @nextcord.slash_command(name='pendinginfractions',
+    @nextcord.slash_command(name='pending',
                             description='View all pending infractions for this server',
                             guild_ids=[TEST_GUILD_ID])
     async def pending_infractions(self, interaction: nextcord.Interaction):
